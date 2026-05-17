@@ -1,0 +1,16 @@
+# Dependências de Pacotes
+node_modules
+
+# Arquivos de Construção (Build)
+dist
+dist-ssr
+
+# Variáveis de Ambiente Locais
+.env
+.env*.local
+
+# Caches do Vite e Ferramentas de Testes
+.vite
+playwright-report
+test-results
+coverage

@@ -1,0 +1,12 @@
+# Dependências de Pacotes
+node_modules
+
+# Compilação e Build
+dist
+
+# Variáveis de Ambiente Locais
+.env
+.env*.local
+
+# Geração de Código Prisma
+/src/generated/prisma
