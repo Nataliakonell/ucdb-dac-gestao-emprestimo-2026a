@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Equipment } from "@/data/mock";
-import { Search, Plus, Pencil, Trash2, Monitor, ArrowRightLeft, Loader2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Monitor, ArrowRightLeft, Loader2, Calendar as CalendarIcon } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -14,6 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/AuthContext";
 import { Textarea } from "@/components/ui/textarea";
+
+// Componentes Shadcn UI adicionais para Date Picker
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, differenceInDays, startOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5279/api";
 
@@ -92,13 +99,43 @@ export default function Equipamentos() {
   
   const { user } = useAuth();
   const [requestingEquipment, setRequestingEquipment] = useState<Equipment | null>(null);
-  const [loanDays, setLoanDays] = useState("7");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [loanNotes, setLoanNotes] = useState("");
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
   const handleRequestLoanSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requestingEquipment) return;
+
+    if (!startDate) {
+      toast.error("A Data de Início é obrigatória.");
+      return;
+    }
+    if (!endDate) {
+      toast.error("A Data de Fim é obrigatória.");
+      return;
+    }
+
+    const today = startOfDay(new Date());
+    const startSelected = startOfDay(startDate);
+    const endSelected = startOfDay(endDate);
+
+    if (startSelected < today) {
+      toast.error("A Data de Início não pode ser anterior à data de hoje.");
+      return;
+    }
+
+    if (endSelected < startSelected) {
+      toast.error("A Data de Fim não pode ser anterior à Data de Início.");
+      return;
+    }
+
+    // Calcular dias de empréstimo (diferença em dias inteiros)
+    let days = differenceInDays(endSelected, startSelected);
+    if (days <= 0) {
+      days = 1; // Mínimo de 1 dia de empréstimo caso início e fim sejam iguais
+    }
 
     try {
       setIsSubmittingRequest(true);
@@ -111,7 +148,9 @@ export default function Equipamentos() {
         },
         body: JSON.stringify({
           equipmentId: requestingEquipment.id,
-          days: parseInt(loanDays, 10),
+          days,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
           notes: loanNotes,
           sector: user?.sector
         })
@@ -125,7 +164,8 @@ export default function Equipamentos() {
       toast.success("Solicitação de empréstimo enviada com sucesso!");
       setRequestingEquipment(null);
       setLoanNotes("");
-      setLoanDays("7");
+      setStartDate(undefined);
+      setEndDate(undefined);
       fetchEquipments();
     } catch (err: any) {
       toast.error(err.message || "Não foi possível enviar a solicitação.");
@@ -394,7 +434,14 @@ export default function Equipamentos() {
       </Dialog>
 
       {/* Request Loan Dialog for Collaborators */}
-      <Dialog open={!!requestingEquipment} onOpenChange={(open) => !open && setRequestingEquipment(null)}>
+      <Dialog open={!!requestingEquipment} onOpenChange={(open) => {
+        if (!open) {
+          setRequestingEquipment(null);
+          setStartDate(undefined);
+          setEndDate(undefined);
+          setLoanNotes("");
+        }
+      }}>
         <DialogContent className="max-w-md sm:rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -408,19 +455,74 @@ export default function Equipamentos() {
 
           {requestingEquipment && (
             <form onSubmit={handleRequestLoanSubmit} className="space-y-4 py-2">
-              <div className="space-y-1">
-                <Label htmlFor="req-days" className="text-sm font-semibold">Prazo de Empréstimo (Dias)</Label>
-                <Input
-                  id="req-days"
-                  type="number"
-                  min="1"
-                  max="30"
-                  required
-                  value={loanDays}
-                  onChange={(e) => setLoanDays(e.target.value)}
-                  placeholder="Ex: 7"
-                />
-                <span className="text-[11px] text-muted-foreground">Prazo máximo sugerido de 30 dias.</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-sm font-semibold">Data de Início</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal border shadow-sm h-10 px-3",
+                          !startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                        {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione...</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        locale={ptBR}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today;
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-sm font-semibold">Data de Fim</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal border shadow-sm h-10 px-3",
+                          !endDate && "text-muted-foreground"
+                        )}
+                        disabled={!startDate}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                        {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione...</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        locale={ptBR}
+                        disabled={(date) => {
+                          if (!startDate) return true;
+                          const startLimit = new Date(startDate);
+                          startLimit.setHours(0, 0, 0, 0);
+                          return date < startLimit;
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -436,7 +538,12 @@ export default function Equipamentos() {
               </div>
 
               <DialogFooter className="pt-4 gap-2">
-                <Button type="button" variant="outline" onClick={() => setRequestingEquipment(null)} disabled={isSubmittingRequest}>
+                <Button type="button" variant="outline" onClick={() => {
+                  setRequestingEquipment(null);
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                  setLoanNotes("");
+                }} disabled={isSubmittingRequest}>
                   Cancelar
                 </Button>
                 <Button type="submit" variant="default" className="font-semibold" disabled={isSubmittingRequest}>
