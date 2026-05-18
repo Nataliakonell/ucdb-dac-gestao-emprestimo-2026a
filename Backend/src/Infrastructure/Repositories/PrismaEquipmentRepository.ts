@@ -65,12 +65,33 @@ export class PrismaEquipmentRepository implements IEquipmentRepository {
 
   async delete(id: number): Promise<boolean> {
     try {
-      await prisma.equipment.delete({
-        where: { id }
+      // 1. Verificar se há algum empréstimo pendente ou aprovado (ativo)
+      const activeLoan = await prisma.loan.findFirst({
+        where: {
+          equipmentId: id,
+          status: {
+            in: ["pendente", "aprovado"]
+          }
+        }
       });
+
+      if (activeLoan) {
+        throw new Error("Não é possível excluir o equipamento pois ele está vinculado a solicitações ou empréstimos ativos.");
+      }
+
+      // 2. Se existirem apenas empréstimos inativos (devolvidos ou recusados), deletamos o histórico e o equipamento em transação
+      await prisma.$transaction([
+        prisma.loan.deleteMany({
+          where: { equipmentId: id }
+        }),
+        prisma.equipment.delete({
+          where: { id }
+        })
+      ]);
+
       return true;
     } catch (error: any) {
-      if (error.code === "P2003") {
+      if (error.code === "P2003" || error.message.includes("solicitações ou empréstimos ativos")) {
         throw new Error("Não é possível excluir o equipamento pois ele está vinculado a solicitações ou empréstimos ativos.");
       }
       throw error;
