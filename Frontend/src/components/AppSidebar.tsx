@@ -5,7 +5,8 @@ import {
   Settings,
   Package,
   LogOut,
-  Bell
+  Bell,
+  ChevronsUpDown
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -23,6 +24,14 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5279/api";
 
@@ -34,6 +43,18 @@ export function AppSidebar() {
   const isActive = (path: string) => location.pathname === path;
 
   const [hasPendingNotification, setHasPendingNotification] = useState(false);
+
+  const getFirstName = (fullName?: string) => {
+    if (!fullName) return "";
+    return fullName.trim().split(" ")[0];
+  };
+
+  const getInitials = (fullName?: string) => {
+    if (!fullName) return "";
+    const parts = fullName.trim().split(" ");
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -163,18 +184,68 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 flex flex-col gap-3">
+      <SidebarFooter className="p-2">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => logout()}
-              tooltip="Sair da Conta"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="h-4 w-4" />
-              {!collapsed && <span>Sair da Conta</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {user && (
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="w-full data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground flex items-center justify-between outline-none"
+                    tooltip={user.name}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="h-8 w-8 shrink-0 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shadow-sm">
+                        {getInitials(user.name)}
+                      </div>
+                      {!collapsed && (
+                        <div className="flex flex-col text-left min-w-0">
+                          <span className="truncate text-xs font-semibold text-foreground">
+                            {getFirstName(user.name)}
+                          </span>
+                          <span className="truncate text-[10px] text-muted-foreground">
+                            {user.sector}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {!collapsed && <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0 ml-1" />}
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56"
+                  side={collapsed ? "right" : "top"}
+                  align="end"
+                  sideOffset={4}
+                >
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1 py-1">
+                      <p className="text-sm font-bold leading-none text-foreground">{user.name}</p>
+                      <p className="text-[11px] leading-none text-muted-foreground mt-0.5">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5 flex flex-col gap-0.5">
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/80">Tipo de Conta</span>
+                    <span className="text-xs font-semibold text-foreground bg-primary/10 text-primary self-start px-2 py-0.5 rounded mt-0.5">{user.role}</span>
+                  </div>
+                  <div className="px-2 py-1.5 flex flex-col gap-0.5">
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/80">Setor</span>
+                    <span className="text-xs font-semibold text-foreground">{user.sector}</span>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => logout()}
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer font-semibold py-2"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair da Conta
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
