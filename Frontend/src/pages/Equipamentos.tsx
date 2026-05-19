@@ -300,7 +300,42 @@ export default function Equipamentos() {
 
       {user?.role === "Administrador" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-card shadow-sm border border-border/60 rounded-xl transition-all duration-200 hover:shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total de Equipamentos</CardTitle>
+              <Monitor className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-extrabold tracking-tight text-foreground">{data.length}</div>
+              <p className="text-[10px] text-muted-foreground mt-1">Registrados na base de dados</p>
+            </CardContent>
+          </Card>
 
+          <Card className="bg-card shadow-sm border border-border/60 rounded-xl transition-all duration-200 hover:shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Disponíveis</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-extrabold tracking-tight text-foreground">
+                {data.filter((e) => e.status === "disponivel").length}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Prontos para empréstimo</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card shadow-sm border border-border/60 rounded-xl transition-all duration-200 hover:shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Emprestados</CardTitle>
+              <ArrowRightLeft className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-extrabold tracking-tight text-foreground">
+                {data.filter((e) => e.status === "em_uso").length}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Ativos com colaboradores</p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
