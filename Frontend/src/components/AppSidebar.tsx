@@ -6,7 +6,8 @@ import {
   Package,
   LogOut,
   Bell,
-  ChevronsUpDown
+  ChevronsUpDown,
+  LayoutDashboard
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -87,6 +88,7 @@ export function AppSidebar() {
 
   if (user?.role === "Administrador") {
     mainItems.push(
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Equipamentos", url: "/equipamentos", icon: Monitor },
       { title: "Notificação", url: "/emprestimos", icon: ArrowRightLeft },
       { title: "Aprovações", url: "/notificacoes", icon: Bell }

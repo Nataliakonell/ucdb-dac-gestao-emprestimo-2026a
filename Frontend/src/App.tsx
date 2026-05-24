@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/Layout";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import Dashboard from "./pages/Dashboard";
 import Equipamentos from "./pages/Equipamentos";
 import Emprestimos from "./pages/Emprestimos";
 import Notificacoes from "./pages/Notificacoes";
@@ -40,6 +41,12 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
   return <>{children}</>;
 };
 
+const HomeRedirect = () => {
+  const { user } = useAuth();
+
+  return <Navigate to={user?.role === "Administrador" ? "/dashboard" : "/equipamentos"} replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -54,7 +61,8 @@ const App = () => (
               <Route path="/register" element={<Register />} />
 
               {/* Protected Collaborative/General Routes */}
-              <Route path="/" element={<Navigate to="/equipamentos" replace />} />
+              <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
               <Route path="/equipamentos" element={<ProtectedRoute><Equipamentos /></ProtectedRoute>} />
               <Route path="/emprestimos" element={<ProtectedRoute><Emprestimos /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
