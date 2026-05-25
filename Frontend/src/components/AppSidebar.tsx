@@ -6,6 +6,7 @@ import {
   Package,
   LogOut,
   Bell,
+  ClipboardCheck,
   ChevronsUpDown,
   LayoutDashboard
 } from "lucide-react";
@@ -91,7 +92,7 @@ export function AppSidebar() {
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Equipamentos", url: "/equipamentos", icon: Monitor },
       { title: "Notificação", url: "/emprestimos", icon: ArrowRightLeft },
-      { title: "Aprovações", url: "/notificacoes", icon: Bell }
+      { title: "Aprovações", url: "/aprovacoes", icon: ClipboardCheck }
     );
   } else {
     mainItems.push(

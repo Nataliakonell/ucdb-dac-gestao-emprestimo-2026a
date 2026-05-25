@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Equipamentos from "./pages/Equipamentos";
 import Emprestimos from "./pages/Emprestimos";
 import Notificacoes from "./pages/Notificacoes";
+import Aprovacoes from "./pages/Aprovacoes";
 import Configuracoes from "./pages/Configuracoes";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -69,6 +70,7 @@ const App = () => (
 
               {/* Protected Administrative-only Routes */}
               <Route path="/notificacoes" element={<ProtectedRoute adminOnly><Notificacoes /></ProtectedRoute>} />
+              <Route path="/aprovacoes" element={<ProtectedRoute adminOnly><Aprovacoes /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
