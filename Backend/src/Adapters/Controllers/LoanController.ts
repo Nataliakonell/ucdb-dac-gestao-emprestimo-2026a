@@ -6,6 +6,8 @@ import { RejectLoan } from "../../UseCases/Loans/RejectLoan";
 import { ReturnEquipment } from "../../UseCases/Loans/ReturnEquipment";
 import { ILoanRepository } from "../../Domain/Repositories/ILoanRepository";
 import { IEquipmentRepository } from "../../Domain/Repositories/IEquipmentRepository";
+import { INotificationRepository } from "../../Domain/Repositories/INotificationRepository";
+import { IUserRepository } from "../../Domain/Repositories/IUserRepository";
 
 export class LoanController {
   private requestLoan: RequestLoan;
@@ -16,12 +18,14 @@ export class LoanController {
 
   constructor(
     loanRepository: ILoanRepository,
-    equipmentRepository: IEquipmentRepository
+    equipmentRepository: IEquipmentRepository,
+    notificationRepository: INotificationRepository,
+    userRepository: IUserRepository
   ) {
-    this.requestLoan = new RequestLoan(loanRepository, equipmentRepository);
+    this.requestLoan = new RequestLoan(loanRepository, equipmentRepository, notificationRepository, userRepository);
     this.getLoans = new GetLoans(loanRepository);
-    this.approveLoan = new ApproveLoan(loanRepository, equipmentRepository);
-    this.rejectLoan = new RejectLoan(loanRepository);
+    this.approveLoan = new ApproveLoan(loanRepository, equipmentRepository, notificationRepository);
+    this.rejectLoan = new RejectLoan(loanRepository, equipmentRepository, notificationRepository);
     this.returnEquipment = new ReturnEquipment(loanRepository, equipmentRepository);
   }
 

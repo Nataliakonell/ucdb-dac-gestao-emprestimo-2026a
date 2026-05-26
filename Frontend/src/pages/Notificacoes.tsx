@@ -1,9 +1,20 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { Bell, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Bell, CheckCircle, XCircle, Loader2, Eye } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 interface PendingLoan {
   id: number;
   equipmentId: number;
@@ -20,6 +31,7 @@ const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5279/api";
 
 export default function Notificacoes() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data = [], isLoading } = useQuery<PendingLoan[]>({
     queryKey: ["pending-loans"],
@@ -148,12 +160,52 @@ export default function Notificacoes() {
                   </div>
                 </div>
                 <div className="flex gap-2 self-end md:self-center shrink-0">
-                  <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleReject(loan.id)}>
-                    <XCircle className="h-4 w-4 mr-1.5" /> Recusar
+                  <Button variant="ghost" size="icon" onClick={() => navigate(`/solicitacao/${loan.id}`)} aria-label="Ver detalhes" className="h-9 w-9 hover:bg-muted border hidden sm:flex">
+                    <Eye className="h-4 w-4 text-primary" />
                   </Button>
-                  <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={() => handleApprove(loan.id)}>
-                    <CheckCircle className="h-4 w-4 mr-1.5" /> Aprovar
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10">
+                        <XCircle className="h-4 w-4 mr-1.5" /> Recusar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza que quer recusar?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação mudará o status da solicitação para "rejeitado". O colaborador não poderá retirar o equipamento.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleReject(loan.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Sim, recusar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90">
+                        <CheckCircle className="h-4 w-4 mr-1.5" /> Aprovar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza que quer aprovar?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Ao aprovar, o equipamento mudará o status para "Em uso" e o colaborador estará autorizado a retirá-lo.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleApprove(loan.id)} className="bg-success text-success-foreground hover:bg-success/90">
+                          Sim, aprovar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>

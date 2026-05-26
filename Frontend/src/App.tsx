@@ -7,13 +7,16 @@ import { Layout } from "@/components/Layout";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import Equipamentos from "./pages/Equipamentos";
+import EquipamentoDetalhes from "./pages/EquipamentoDetalhes";
 import Emprestimos from "./pages/Emprestimos";
 import Notificacoes from "./pages/Notificacoes";
+import SolicitacaoDetalhes from "./pages/SolicitacaoDetalhes";
 import Aprovacoes from "./pages/Aprovacoes";
 import Configuracoes from "./pages/Configuracoes";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import { VLibras } from "@/components/VLibras";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +58,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <VLibras />
           <Layout>
             <Routes>
               {/* Public Auth Routes */}
@@ -65,12 +69,16 @@ const App = () => (
               <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
               <Route path="/equipamentos" element={<ProtectedRoute><Equipamentos /></ProtectedRoute>} />
+              <Route path="/equipamentos/:id" element={<ProtectedRoute><EquipamentoDetalhes /></ProtectedRoute>} />
               <Route path="/emprestimos" element={<ProtectedRoute><Emprestimos /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
 
               {/* Protected Administrative-only Routes */}
               <Route path="/notificacoes" element={<ProtectedRoute adminOnly><Notificacoes /></ProtectedRoute>} />
               <Route path="/aprovacoes" element={<ProtectedRoute adminOnly><Aprovacoes /></ProtectedRoute>} />
+
+              {/* Protected Shared Details */}
+              <Route path="/solicitacao/:id" element={<ProtectedRoute><SolicitacaoDetalhes /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

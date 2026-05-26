@@ -4,11 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Search, CheckCircle, XCircle, ArrowRightLeft, Loader2 } from "lucide-react";
+import { Search, CheckCircle, XCircle, ArrowRightLeft, Loader2, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Loan {
   id: string | number;
@@ -27,6 +39,7 @@ const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5279/api";
 export default function Emprestimos() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("todos");
 
@@ -130,8 +143,6 @@ export default function Emprestimos() {
     onError: (err: any) => toast.error(err.message)
   });
 
-  const handleApprove = (id: string | number) => approveMutation.mutate(id);
-  const handleReject = (id: string | number) => rejectMutation.mutate(id);
   const handleReturn = (id: string | number) => returnMutation.mutate(id);
 
   return (
@@ -193,13 +204,13 @@ export default function Emprestimos() {
                     <TableHead className="hidden md:table-cell text-sm sm:text-base font-bold text-muted-foreground py-3">Data Solicitação</TableHead>
                     <TableHead className="hidden lg:table-cell text-sm sm:text-base font-bold text-muted-foreground py-3">Devolução Prevista</TableHead>
                     <TableHead className="text-sm sm:text-base font-bold text-muted-foreground py-3">Status</TableHead>
-                    {user?.role === "Administrador" && <TableHead className="text-right text-sm sm:text-base font-bold text-muted-foreground py-3">Ações</TableHead>}
+                    <TableHead className="text-right text-sm sm:text-base font-bold text-muted-foreground py-3">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={user?.role === "Administrador" ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         <ArrowRightLeft className="h-8 w-8 mx-auto mb-2 opacity-40" />
                         Nenhum empréstimo encontrado.
                       </TableCell>
@@ -213,27 +224,87 @@ export default function Emprestimos() {
                         <TableCell className="hidden md:table-cell text-sm sm:text-base font-medium py-4">{loan.requestDate}</TableCell>
                         <TableCell className="hidden lg:table-cell text-sm sm:text-base font-medium py-4">{loan.expectedReturn}</TableCell>
                         <TableCell className="py-4"><StatusBadge status={loan.status} /></TableCell>
-                        {user?.role === "Administrador" && (
-                          <TableCell className="text-right py-4">
-                            <div className="flex justify-end gap-2">
-                              {loan.status === "pendente" && (
-                                <>
-                                  <Button variant="ghost" size="icon" onClick={() => handleApprove(loan.id)} aria-label="Aprovar" className="h-10 w-10 hover:bg-muted border">
-                                    <CheckCircle className="h-5 w-5 text-success" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => handleReject(loan.id)} aria-label="Rejeitar" className="h-10 w-10 hover:bg-muted border">
-                                    <XCircle className="h-5 w-5 text-destructive" />
-                                  </Button>
-                                </>
-                              )}
-                              {(loan.status === "aprovado" || loan.status === "atrasado") && (
-                                <Button variant="outline" size="sm" onClick={() => handleReturn(loan.id)} className="h-10 px-4 font-bold border hover:bg-muted shadow-sm">
-                                  Devolver
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        )}
+                        <TableCell className="text-right py-4">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => navigate(`/solicitacao/${loan.id}`)} aria-label="Ver detalhes" className="h-10 w-10 hover:bg-muted border">
+                              <Eye className="h-5 w-5 text-primary" />
+                            </Button>
+                            {user?.role === "Administrador" && (
+                              <>
+                                {loan.status === "pendente" && (
+                                  <>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" aria-label="Aprovar" className="h-10 w-10 hover:bg-muted border">
+                                          <CheckCircle className="h-5 w-5 text-success" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Aprovar solicitação?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Ao aprovar, o equipamento mudará o status para "Em uso".
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => approveMutation.mutate(loan.id)} className="bg-success text-success-foreground hover:bg-success/90">
+                                            Sim, aprovar
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" aria-label="Rejeitar" className="h-10 w-10 hover:bg-muted border">
+                                          <XCircle className="h-5 w-5 text-destructive" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Recusar solicitação?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Esta ação mudará o status da solicitação para "rejeitado".
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => rejectMutation.mutate(loan.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                            Sim, recusar
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </>
+                                )}
+                                {(loan.status === "aprovado" || loan.status === "atrasado") && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="outline" size="sm" className="h-10 px-4 font-bold border hover:bg-muted shadow-sm">
+                                        Devolver
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Registrar devolução?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          O equipamento será devolvido ao estoque e ficará disponível novamente.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => returnMutation.mutate(loan.id)}>
+                                          Sim, registrar devolução
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

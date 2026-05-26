@@ -264,7 +264,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             <Button asChild className="w-full justify-start gap-2">
-              <Link to="/aprovacoes">
+              <Link to="/notificacoes">
                 <Bell className="h-4 w-4" />
                 Ver aprovações pendentes
               </Link>

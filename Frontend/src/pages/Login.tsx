@@ -52,10 +52,6 @@ export default function Login() {
         <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-md mb-2">
           <ShieldCheck className="h-7 w-7" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground">Resource Buddy</h1>
-        <p className="text-sm text-muted-foreground text-center">
-          Controle de estoque e fluxo de equipamentos corporativos
-        </p>
       </div>
 
       <Card className="border-border shadow-lg">

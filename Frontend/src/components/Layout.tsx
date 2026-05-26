@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useLocation } from "react-router-dom";
-import { VLibras } from "./VLibras";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,7 +14,6 @@ export function Layout({ children }: LayoutProps) {
     return (
       <div className="min-h-screen w-full bg-background flex flex-col items-center justify-center p-4">
         <main className="w-full flex items-center justify-center">{children}</main>
-        <VLibras />
       </div>
     );
   }
@@ -37,7 +35,6 @@ export function Layout({ children }: LayoutProps) {
           </main>
         </div>
       </div>
-      <VLibras />
     </SidebarProvider>
   );
 }

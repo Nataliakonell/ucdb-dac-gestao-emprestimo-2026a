@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Equipment } from "@/data/mock";
-import { Search, Plus, Pencil, Trash2, Monitor, ArrowRightLeft, Loader2, Calendar as CalendarIcon, CheckCircle2, ImageUp } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Monitor, ArrowRightLeft, Loader2, Calendar as CalendarIcon, CheckCircle2, ImageUp, Eye } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ import { format, differenceInDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5279/api";
 
@@ -91,6 +92,7 @@ const compressImage = (file: File): Promise<Blob> => {
 
 export default function Equipamentos() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -384,6 +386,9 @@ export default function Equipamentos() {
                       <TableCell className="text-right py-4">
                         {user?.role === "Administrador" ? (
                           <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => navigate(`/equipamentos/${eq.id}`)} aria-label="Ver detalhes" className="h-10 w-10 hover:bg-muted border">
+                              <Eye className="h-5 w-5 text-primary" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => { setEditing(eq); setDialogOpen(true); }} aria-label="Editar" className="h-10 w-10 hover:bg-muted border">
                               <Pencil className="h-5 w-5" />
                             </Button>
@@ -392,7 +397,10 @@ export default function Equipamentos() {
                             </Button>
                           </div>
                         ) : (
-                          <div className="flex justify-end">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => navigate(`/equipamentos/${eq.id}`)} aria-label="Ver detalhes" className="h-10 w-10 hover:bg-muted border hidden sm:flex">
+                              <Eye className="h-5 w-5 text-primary" />
+                            </Button>
                             <Button
                               variant="default"
                               size="sm"

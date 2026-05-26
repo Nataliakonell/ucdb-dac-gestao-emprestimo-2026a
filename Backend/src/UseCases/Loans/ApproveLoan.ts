@@ -1,11 +1,13 @@
 import { ILoanRepository } from "../../Domain/Repositories/ILoanRepository";
 import { IEquipmentRepository } from "../../Domain/Repositories/IEquipmentRepository";
 import { Loan } from "../../Domain/Entities/Loan";
+import { INotificationRepository } from "../../Domain/Repositories/INotificationRepository";
 
 export class ApproveLoan {
   constructor(
     private loanRepository: ILoanRepository,
-    private equipmentRepository: IEquipmentRepository
+    private equipmentRepository: IEquipmentRepository,
+    private notificationRepository: INotificationRepository
   ) {}
 
   async execute(loanId: number): Promise<Loan> {
@@ -41,6 +43,12 @@ export class ApproveLoan {
     await this.equipmentRepository.update(loan.equipmentId, {
       ...equipment,
       status: "em_uso",
+    });
+
+    // 3. Notificar o colaborador
+    await this.notificationRepository.create({
+      userId: loan.userId,
+      message: `Sua solicitação do equipamento '${equipment.name}' foi APROVADA! Você já pode retirá-lo.`,
     });
 
     return updatedLoan;

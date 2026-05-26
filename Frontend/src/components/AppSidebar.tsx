@@ -8,7 +8,8 @@ import {
   Bell,
   ClipboardCheck,
   ChevronsUpDown,
-  LayoutDashboard
+  LayoutDashboard,
+  Check
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -35,6 +36,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
+import { useRef } from "react";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5279/api";
 
@@ -46,6 +50,8 @@ export function AppSidebar() {
   const isActive = (path: string) => location.pathname === path;
 
   const [hasPendingNotification, setHasPendingNotification] = useState(false);
+  const [collaboratorNotifications, setCollaboratorNotifications] = useState<any[]>([]);
+  const lastIdRef = useRef<number | null>(null);
 
   const getFirstName = (fullName?: string) => {
     if (!fullName) return "";
@@ -61,17 +67,14 @@ export function AppSidebar() {
 
   useEffect(() => {
     if (!user) return;
-    const checkNotifications = async () => {
+    const checkAdminNotifications = async () => {
       try {
         const token = localStorage.getItem("resource_buddy_token");
         const res = await fetch(`${apiUrl}/loans`, {
-          headers: {
-            ...(token ? { "Authorization": `Bearer ${token}` } : {})
-          }
+          headers: { ...(token ? { "Authorization": `Bearer ${token}` } : {}) }
         });
         if (res.ok) {
           const loans = await res.json();
-          // Exibe o ponto vermelho pulsante se houver qualquer empréstimo no status pendente
           const pending = loans.some((l: any) => l.status === "pendente");
           setHasPendingNotification(pending);
         }
@@ -80,10 +83,68 @@ export function AppSidebar() {
       }
     };
 
-    checkNotifications();
-    const interval = setInterval(checkNotifications, 10000);
+    const checkCollaboratorNotifications = async () => {
+      try {
+        const token = localStorage.getItem("resource_buddy_token");
+        const res = await fetch(`${apiUrl}/notifications`, {
+          headers: { ...(token ? { "Authorization": `Bearer ${token}` } : {}) }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          
+          if (data.length > 0) {
+            const latestId = Math.max(...data.map((n: any) => n.id));
+            if (lastIdRef.current === null) {
+              lastIdRef.current = latestId;
+            } else if (latestId > lastIdRef.current) {
+              const newNotif = data.find((n: any) => n.id === latestId);
+              if (newNotif && !newNotif.read) {
+                toast.info("Nova Notificação", { description: newNotif.message, duration: 5000 });
+              }
+              lastIdRef.current = latestId;
+            }
+          }
+          setCollaboratorNotifications(data);
+        }
+      } catch (err) {}
+    };
+
+    // Admin verifica empréstimos pendentes + notificações; Colaborador verifica só notificações
+    const runChecks = async () => {
+      if (user.role === "Administrador") await checkAdminNotifications();
+      await checkCollaboratorNotifications();
+    };
+    runChecks();
+    const interval = setInterval(runChecks, 10000);
     return () => clearInterval(interval);
   }, [user]);
+
+  const markAsRead = async (id: number) => {
+    try {
+      const token = localStorage.getItem("resource_buddy_token");
+      await fetch(`${apiUrl}/notifications/${id}/read`, {
+        method: "PATCH",
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      setCollaboratorNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (error) {}
+  };
+
+  const markAllAsRead = async () => {
+    const unread = collaboratorNotifications.filter(n => !n.read);
+    const token = localStorage.getItem("resource_buddy_token");
+    for (const n of unread) {
+      try {
+        await fetch(`${apiUrl}/notifications/${n.id}/read`, {
+          method: "PATCH",
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        });
+      } catch {}
+    }
+    setCollaboratorNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const unreadCount = collaboratorNotifications.filter((n) => !n.read).length;
 
   const mainItems = [];
 
@@ -91,13 +152,13 @@ export function AppSidebar() {
     mainItems.push(
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Equipamentos", url: "/equipamentos", icon: Monitor },
-      { title: "Notificação", url: "/emprestimos", icon: ArrowRightLeft },
+      { title: "Empréstimos", url: "/emprestimos", icon: ArrowRightLeft },
       { title: "Aprovações", url: "/aprovacoes", icon: ClipboardCheck }
     );
   } else {
     mainItems.push(
       { title: "Solicitar Equipamentos", url: "/equipamentos", icon: Monitor },
-      { title: "Notificação", url: "/emprestimos", icon: ArrowRightLeft }
+      { title: "Minhas Solicitações", url: "/emprestimos", icon: ArrowRightLeft }
     );
   }
 
@@ -169,6 +230,70 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              {/* Item de Notificações (para todos os usuários) */}
+              <SidebarMenuItem>
+                <Popover onOpenChange={(open) => { if (open && unreadCount > 0) markAllAsRead(); }}>
+                  <PopoverTrigger asChild>
+                      <SidebarMenuButton tooltip="Notificações" className="w-full">
+                        <div className="w-full flex items-center relative">
+                          <Bell className="h-4 w-4 shrink-0" />
+                          {!collapsed ? (
+                            <div className="flex items-center justify-between w-full ml-2 min-w-0">
+                              <span className="truncate">Notificações</span>
+                              {unreadCount > 0 && (
+                                <span className="relative flex h-2 w-2 mr-1 shrink-0">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            unreadCount > 0 && (
+                              <span className="absolute top-1 right-1 flex h-1.5 w-1.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </SidebarMenuButton>
+                    </PopoverTrigger>
+                    <PopoverContent side="right" align="start" className="w-80 p-0 shadow-md">
+                      <div className="flex items-center justify-between border-b px-4 py-3">
+                        <h4 className="font-semibold text-sm">Notificações</h4>
+                        <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium">
+                          {unreadCount} não lidas
+                        </span>
+                      </div>
+                      <div className="max-h-[300px] overflow-y-auto">
+                        {collaboratorNotifications.length === 0 ? (
+                          <div className="p-8 text-center text-sm text-muted-foreground">
+                            Você não tem novas notificações.
+                          </div>
+                        ) : (
+                          collaboratorNotifications.map((n) => (
+                            <div key={n.id} className={`flex gap-3 border-b p-4 text-sm transition-colors hover:bg-muted/50 ${!n.read ? "bg-primary/5" : ""}`}>
+                              <div className="flex-1 space-y-1">
+                                <p className={`leading-snug ${!n.read ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{n.message}</p>
+                                <p className="text-xs text-muted-foreground/70">{new Date(n.createdAt).toLocaleString("pt-BR")}</p>
+                              </div>
+                              {!n.read && (
+                                <button
+                                  className="h-6 w-6 rounded-full shrink-0 self-center flex items-center justify-center hover:bg-muted"
+                                  onClick={() => markAsRead(n.id)}
+                                  title="Marcar como lida"
+                                >
+                                  <Check className="h-4 w-4 text-primary" />
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -8,6 +8,8 @@ import { AuthController } from "../../Adapters/Controllers/AuthController";
 import { PrismaUserRepository } from "../Repositories/PrismaUserRepository";
 import { LoanController } from "../../Adapters/Controllers/LoanController";
 import { PrismaLoanRepository } from "../Repositories/PrismaLoanRepository";
+import { NotificationController } from "../../Adapters/Controllers/NotificationController";
+import { PrismaNotificationRepository } from "../Repositories/PrismaNotificationRepository";
 import { authMiddleware, requireAdmin } from "../../Adapters/Middlewares/AuthMiddleware";
 
 const app = express();
@@ -32,7 +34,9 @@ const userRepository = new PrismaUserRepository();
 const authController = new AuthController(userRepository);
 
 const loanRepository = new PrismaLoanRepository();
-const loanController = new LoanController(loanRepository, equipmentRepository);
+const notificationRepository = new PrismaNotificationRepository();
+const loanController = new LoanController(loanRepository, equipmentRepository, notificationRepository, userRepository);
+const notificationController = new NotificationController(notificationRepository);
 
 // Authentication public routes
 app.post("/api/auth/register", (req, res) => authController.register(req, res));
@@ -71,6 +75,10 @@ app.get("/api/loans", authMiddleware, (req, res) => loanController.list(req, res
 app.patch("/api/loans/:id/approve", authMiddleware, requireAdmin, (req, res) => loanController.approve(req, res));
 app.patch("/api/loans/:id/reject", authMiddleware, requireAdmin, (req, res) => loanController.reject(req, res));
 app.patch("/api/loans/:id/return", authMiddleware, requireAdmin, (req, res) => loanController.returnLoan(req, res));
+
+// Notification routes (Protected)
+app.get("/api/notifications", authMiddleware, (req, res) => notificationController.list(req, res));
+app.patch("/api/notifications/:id/read", authMiddleware, (req, res) => notificationController.markAsRead(req, res));
 
 // Administrative routes (Admin only)
 app.post("/api/equipments", authMiddleware, requireAdmin, upload.single("image"), (req, res) => equipmentController.create(req, res));
