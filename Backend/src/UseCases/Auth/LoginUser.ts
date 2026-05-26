@@ -40,7 +40,6 @@ export class LoginUser {
 
     const jwtSecret = process.env.JWT_SECRET || "resource-buddy-super-secret-key-98765";
     
-    // Assinar token JWT válido por 7 dias
     const token = jwt.sign(
       {
         id: user.id,

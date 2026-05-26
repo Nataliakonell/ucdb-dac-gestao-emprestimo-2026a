@@ -111,7 +111,7 @@ export default function Register() {
               <Input
                 id="password-input"
                 type="password"
-                placeholder="Crie uma senha forte"
+                placeholder="Crie uma senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
