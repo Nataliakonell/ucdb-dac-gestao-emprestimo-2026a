@@ -1,17 +1,52 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
     container_name: resource_buddy_postgres
     environment:
-      POSTGRES_DB: resource_buddy
+      POSTGRES_DB: ucdb-gestao-emprestimo
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ucdb-gestao-emprestimo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: resource_buddy_backend
+    environment:
+      PORT: 5279
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/ucdb-gestao-emprestimo?schema=public
+      JWT_SECRET: resource-buddy-super-secret-key-98765
+      S3_ENDPOINT: https://123.r2.cloudflarestorage.com
+      S3_ACCESS_KEY_ID: 123
+      S3_SECRET_ACCESS_KEY: 123
+      S3_BUCKET_NAME: ucdb-gestao-emprestimo
+      STORAGE_PUBLIC_URL: http://localhost:5279/api/uploads
+    ports:
+      - "5279:5279"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: resource_buddy_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

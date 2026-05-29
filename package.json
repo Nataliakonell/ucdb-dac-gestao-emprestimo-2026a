@@ -7,7 +7,10 @@
     "dev:backend": "npm run dev --prefix Backend",
     "build:frontend": "npm run build --prefix Frontend",
     "build:backend": "npm run build --prefix Backend",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "dependencies": {
     "concurrently": "^8.2.2"
